@@ -324,16 +324,8 @@ def clear_console():
     else:
         os.system('clear')  # Exécuter la commande système "clear" pour effacer la console
 
-
-
-def main():
-
-    
-    gcode_file_selected=scan_repertoire()
-    # Appel de la fonction pour scanner le répertoire
-    
-
-       # Boucle principale du menu
+def menu_modif():
+        # Boucle principale du menu
     while True:
         clear_console()
         print(f"Le fichier gcode sélectionné est : {gcode_file_selected}")
@@ -343,7 +335,8 @@ def main():
                     ["3", "Nettoyage des instructions m102|m103|m486"],
                     ["4", "Redimensioner un fichier Gcode"],
                     ["5", "Changer de taille de Buse"],
-                    ["6", "Quitter"]],
+                    ["6", "Retour"],
+                    ["7", "Quitter"]],
                     headers=['Option', 'Description'], tablefmt='plain'))  # Utilisation de tabulate pour afficher le menu
 
       
@@ -360,12 +353,47 @@ def main():
         elif choix == "5":
             taille_buse(gcode_file_selected)
         elif choix == "6":
+            menu_principal()
+        elif choix == "7":
             quitter()
         else:
             print("Choix invalide. Veuillez réessayer.")
+
+def menu_principal():
     
+
+    # Boucle principale du menu
+    while True:
+        clear_console()
+        print("\nMenu Principal:\n")
+        print(tabulate([["1", "Modifier un fichier Gcode"],
+                    ["2", "Généré un fichier Gcode"],
+                    ["3", "Quitter"]],
+                    headers=['Option', 'Description'], tablefmt='plain'))  # Utilisation de tabulate pour afficher le menu
+
+      
+        choix = input("\nVeuillez entrer le numéro de votre choix : ")
+
+        if choix == "1":
+            gcode_file_selected=scan_repertoire()
+            menu_modif()
+        elif choix == "2":
+            generate_circle_gcode()
+        elif choix == "3":
+            quitter()
+        else:
+            print("Choix invalide. Veuillez réessayer.")    
+
+def main():
+    menu_principal()
     
+  
+
+def generate_gcode_custom():
+    return
     
+def generate_circle_gcode():
+    return    
 
 if __name__=="__main__":
 	main()
