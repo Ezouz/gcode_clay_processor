@@ -1,2 +1,5 @@
 .vscode
-Ressources
+Ressources/*
+Generated_files/*
+__pycache__/
+*.pyc
