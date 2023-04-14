@@ -1,5 +1,6 @@
 import re
 import os
+import math
 from tabulate import tabulate  # Importation de la bibliothèque tabulate
 
 
@@ -388,12 +389,87 @@ def main():
     menu_principal()
     
   
-
+#menu des diffèrentes générations
 def generate_gcode_custom():
     return
     
 def generate_circle_gcode():
-    return    
+    clear_console()
+    # Définition des paramètres par l'utilisateur
+    Xmax = 290 # Taille maximale de l'axe X en mm
+    Ymax = 290 # Taille maximale de l'axe Y en mm
+    diametre_cercle = 80 # Diamètre du cercle à extruder en mm
+    diametre_buse = 2 # Diamètre de la buse en mm
+
+    # Définition des constantes
+    rayon_cercle = diametre_cercle / 2
+    centre_X = Xmax / 2
+    centre_Y = Ymax / 2
+    hauteur_first_Z = 2.25
+    hauteur_de_couche = 1.5
+
+    # Calcul de la longueur de filament nécessaire pour une extrusion complète d'un cercle
+    longueur_filament = math.pi * rayon_cercle * (diametre_buse / 2)
+
+    # Fonction pour calculer les coordonnées X, Y d'un point sur le cercle
+    def coordonnees_cercle(angle):
+        x = centre_X + rayon_cercle * math.cos(math.radians(angle))
+        y = centre_Y + rayon_cercle * math.sin(math.radians(angle))
+        return x, y
+
+    # Début de la génération du fichier Gcode
+    gcode = ""
+
+    # Ajout de la commande d'homming etc.
+    gcode += "G28\n"
+    gcode += "G1 Z5 F5000 ; lift nozzle\n"
+    gcode += "M73 P0 ;printing progress 0%\n"
+    gcode += "G1 Z{:.2f} F7800\n".format(hauteur_first_Z)
+    gcode += "G1 E-2 F2400\n"
+    gcode += "M103 ; extruder off\n"
+    gcode += "G1 F7800\n"
+    
+
+    # Calcul des coordonnées du point de départ sur le cercle
+    angle_depart = 0
+    x_depart, y_depart = coordonnees_cercle(angle_depart)
+
+    # Ajout de la commande de déplacement à la hauteur Z 
+    gcode += "G1 X{:.2f} Y{:.2f}\n".format(x_depart, y_depart)
+    gcode += "M101 ; extruder on\n"
+    gcode += ";END OF HOMING\n"
+    gcode += ";\n"
+    gcode += ";START OF GCODE\n"
+    gcode += "G1 F1800\n"
+
+    # Boucle pour générer les commandes de déplacement pour le cercle avec l'extrusion proportionnelle
+    angle = 0
+    while angle < 360:
+        x, y = coordonnees_cercle(angle)
+        gcode += "G1 X{:.2f} Y{:.2f} E{:.2f}\n".format(x, y, longueur_filament)
+        angle += 5 # Augmenter l'angle de 5 degrés à chaque itération pour déterminer les points du cercle
+
+    # Retour au point de départ pour fermer le cercle
+    gcode += "G1 X{:.2f} Y{:.2f} E{:.2f}\n".format(x_depart, y_depart, longueur_filament)
+
+    # Fin de la génération du fichier Gcode
+    gcode += "G91 ; use relative positioning for the XYZ axes\n" 
+    gcode += "G1 Z40 F4000 ; move 10mm to the right of the current location\n"
+    gcode += "G90;\n" # position absolue
+    gcode += "M106 S0 ; turn off cooling fan\n" 
+    gcode += "M104 S0 ; turn off extruder\n" 
+    gcode += "M140 S0 ; turn off bed\n" 
+    gcode += "G92 E0 ; set the current filament position to E=0\n" 
+    gcode += "G1 E-8 F800 ; retract 10mm of filament\n" 
+    gcode += "M84 ; disable motors\n" 
+    
+    
+    # Écriture du fichier Gcode
+    with open("gcode_extrusion_cercle.gcode", "w") as f:
+        f.write(gcode)
+
+    print("Fichier Gcode généré avec succès !")
+    input("")
 
 if __name__=="__main__":
 	main()
