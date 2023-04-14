@@ -1,9 +1,7 @@
 import os
-from src.menu_utils import clear_console
 
 # Fonction pour scanner le répertoire et récupérer les fichiers *.gcode
 def scan_repertoire():
-    clear_console()
     print("Liste des fichiers Gcode :\n")
     j=0
     gcode_files = []  # Liste pour stocker les fichiers *.gcode
@@ -25,6 +23,6 @@ def scan_repertoire():
             print("Numéro invalide. Veuillez réessayer.")
 
     # Récupération du nom du fichier sélectionné dans une variable
-    gcode_file = gcode_files[choix - 1]
+    gcode_file = 'Ressources/' + gcode_files[choix - 1]
     
     return gcode_file

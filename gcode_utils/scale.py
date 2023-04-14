@@ -1,7 +1,6 @@
 from gcode_utils.utils import get_max_z
 
 def scale_gcode(nom_fichier_gcode):
-    # clear_console()
     print(f"Le fichier gcode sélectionné est : {nom_fichier_gcode}\n")
     print("Redimensioner un fichier Gcode :\n")
     # Demande à l'utilisateur la valeur de hauteur maximale en Z ou le pourcentage de réduction
@@ -104,11 +103,9 @@ def scale_gcode(nom_fichier_gcode):
     print("Z : {:.2f} mm".format(z_max))
 
     # Crée le nom du nouveau fichier Gcode avec le suffixe "dm_"
-    nom_fichier_nouveau_gcode = "dm_" + nom_fichier_gcode
+    nom_fichier_nouveau_gcode = "dm_" + nom_fichier_gcode[11:]
 
     # Écrit le contenu modifié dans le nouveau fichier Gcode
-    with open(nom_fichier_nouveau_gcode, 'w') as fichier:
+    with open('../Generated_files/' + nom_fichier_nouveau_gcode, 'w') as fichier:
         for ligne in lignes:
             fichier.write(ligne)
-    input("")
-

@@ -1,3 +1,4 @@
+import re
 
 # Obtenir la hauteur maximum d'impression (Z)
 def get_max_z(lines):

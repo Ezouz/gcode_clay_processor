@@ -23,13 +23,12 @@ def taille_buse(nom_fichier_gcode):
            
 
     # Crée le nom du nouveau fichier Gcode avec le suffixe "dm_"
-    nom_fichier_nouveau_gcode = "tb_" + nom_fichier_gcode
+    nom_fichier_nouveau_gcode = "tb_" + nom_fichier_gcode[11:]
 
     # Écrit le contenu modifié dans le nouveau fichier Gcode
-    with open(nom_fichier_nouveau_gcode, 'w') as fichier:
+    with open('../Generated_files/' + nom_fichier_nouveau_gcode, 'w') as fichier:
         for ligne in lignes:
             fichier.write(ligne)
 
     # Affiche le pourcentage de réduction d'extrusion
     print("Pourcentage de réduction d'extrusion : {:.2f}%".format(pourcentage_reduction))
-    input("")

@@ -2,7 +2,8 @@ from src.menu import menu_principal
 import math
 
 def main():
-    menu_principal()
+    gcode_file_selected=""
+    menu_principal(gcode_file_selected)
     
 def generate_circle_gcode():
     #clear_console()

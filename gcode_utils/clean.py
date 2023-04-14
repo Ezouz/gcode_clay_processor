@@ -1,7 +1,7 @@
+import re
 
 # clean useless "m102", "m103" et "m486" (for marlin 2)
 def clean_gcode_marlin2(nom_fichier):
-    # clear_console()
     print(f"Le fichier gcode sélectionné est : {nom_fichier}\n")
     print("Nettoyage des instructions m102|m103|m486 :\n")
     with open(nom_fichier, "r") as fichier:
@@ -45,15 +45,13 @@ def clean_gcode_marlin2(nom_fichier):
             # Si l'utilisateur confirme, écrire le résultat dans un nouveau fichier
             if confirmation.lower() == "":
                 # Créer un nom de fichier pour le nouveau fichier gcode avec le préfixe "cl_"
-                nouveau_nom_fichier = "cl_" + nom_fichier
+                nouveau_nom_fichier = "cl_" + nom_fichier[11:]
 
                 # Ouvrir le nouveau fichier en mode écriture
-                with open(nouveau_nom_fichier, "w") as nouveau_fichier:
+                with open('../Generated_files/' + nouveau_nom_fichier, "w") as nouveau_fichier:
                     # Écrire les lignes restantes dans le nouveau fichier
                     for ligne in lignes_conserved:
                         nouveau_fichier.write(ligne)
                 print(f"Le fichier '{nouveau_nom_fichier}' a été créé avec succès.")
-                input("")
             else:
                 print("Le fichier n'a pas été exporté.")
-        input("")

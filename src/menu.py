@@ -3,8 +3,8 @@ from tabulate import tabulate
 from src.directories import scan_repertoire
 from src.menu_utils import clear_console, quitter
 
-def menu_modif():
-        # Boucle principale du menu
+def menu_modif(gcode_file_selected):
+    # Boucle principale du menu
     while True:
         clear_console()
         print(f"Le fichier gcode sélectionné est : {gcode_file_selected}")
@@ -22,25 +22,34 @@ def menu_modif():
         choix = input("\nVeuillez entrer le numéro de votre choix : ")
 
         if choix == "1":
+            clear_console()
             gcode_file_selected=scan_repertoire()
         elif choix == "2":
+            clear_console()
             gcode_utils.modify_gcode_speed(gcode_file_selected)
+            input("")
         elif choix == "3":
+            clear_console()
             gcode_utils.clean_gcode_marlin2(gcode_file_selected)
+            input("")
         elif choix == "4":
+            clear_console()
             gcode_utils.scale_gcode(gcode_file_selected)
+            input("")
         elif choix == "5":
+            clear_console()
             gcode_utils.taille_buse(gcode_file_selected)
+            input("")
         elif choix == "6":
             menu_principal()
         elif choix == "7":
             quitter()
         else:
             print("Choix invalide. Veuillez réessayer.")
-
-def menu_principal():
+        return gcode_file_selected
     
 
+def menu_principal(gcode_file_selected):
     # Boucle principale du menu
     while True:
         clear_console()
@@ -55,10 +64,11 @@ def menu_principal():
 
         if choix == "1":
             gcode_file_selected=scan_repertoire()
-            menu_modif()
+            menu_modif(gcode_file_selected)
         # elif choix == "2":
         #     generate_circle_gcode()
         elif choix == "3":
             quitter()
         else:
-            print("Choix invalide. Veuillez réessayer.")    
+            print("Choix invalide. Veuillez réessayer.")
+    return gcode_file_selected
