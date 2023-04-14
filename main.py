@@ -400,21 +400,32 @@ def generate_circle_gcode():
     Ymax = 290 # Taille maximale de l'axe Y en mm
     diametre_cercle = 80 # Diamètre du cercle à extruder en mm
     diametre_buse = 2 # Diamètre de la buse en mm
+    espacement_lignes = 3.2 # Espacement entre les lignes de remplissage en mm
+    hauteur_first_Z = 2.25
+    hauteur_de_couche = 1.5
+    rayon=diametre_cercle/2
+    pas_deplacement=3.2
 
     # Définition des constantes
     rayon_cercle = diametre_cercle / 2
-    centre_X = Xmax / 2
-    centre_Y = Ymax / 2
-    hauteur_first_Z = 2.25
-    hauteur_de_couche = 1.5
+    centre_x = Xmax / 2
+    centre_y = Ymax / 2
+    # Calcul de la longueur totale du déplacement
+    deplacement_total = math.pi * diametre_cercle
+
+    # Calcul du nombre total d'extrusions nécessaires
+    extrusions_total = deplacement_total / diametre_buse
+
+    # Calcul de l'extrusion à chaque étape
+    extrusion = deplacement_total / extrusions_total
 
     # Calcul de la longueur de filament nécessaire pour une extrusion complète d'un cercle
     longueur_filament = math.pi * rayon_cercle * (diametre_buse / 2)
 
     # Fonction pour calculer les coordonnées X, Y d'un point sur le cercle
     def coordonnees_cercle(angle):
-        x = centre_X + rayon_cercle * math.cos(math.radians(angle))
-        y = centre_Y + rayon_cercle * math.sin(math.radians(angle))
+        x = centre_x + rayon_cercle * math.cos(math.radians(angle))
+        y = centre_y + rayon_cercle * math.sin(math.radians(angle))
         return x, y
 
     # Début de la génération du fichier Gcode
@@ -451,7 +462,48 @@ def generate_circle_gcode():
 
     # Retour au point de départ pour fermer le cercle
     gcode += "G1 X{:.2f} Y{:.2f} E{:.2f}\n".format(x_depart, y_depart, longueur_filament)
+    
+    
+    
+    
+    
+    
 
+    # Calcul du nombre de passes nécessaires pour couvrir le diamètre du cercle
+    nombre_passes = int(diametre_cercle / pas_deplacement)
+
+    # Variable pour inverser la direction de déplacement
+    inverser_direction = False
+
+    # Boucle pour générer les mouvements de remplissage rectilinéaire
+    for passe in range(nombre_passes + 1):
+        # Calcul des coordonnées du point de départ de la hachure parallèle
+        x_depart = centre_x - math.sqrt(rayon**2 - (rayon - passe * pas_deplacement)**2)
+        y_depart = centre_y - (rayon - passe * pas_deplacement)
+
+        # Calcul des coordonnées du point d'arrivée de la hachure parallèle
+        x_arrivee = centre_x + math.sqrt(rayon**2 - (rayon - passe * pas_deplacement)**2)
+        y_arrivee = centre_y - (rayon - passe * pas_deplacement)
+
+        # Inversion des points de départ et d'arrivée pour alterner la direction de déplacement
+        if inverser_direction:
+            x_depart, x_arrivee = x_arrivee, x_depart
+            y_depart, y_arrivee = y_arrivee, y_depart
+
+        # Ajout de la commande de déplacement vers le point de départ de la hachure parallèle
+        gcode += "G1 X{:.2f} Y{:.2f}  E{:.2f}\n".format(x_depart, y_depart,  extrusion)
+
+        # Ajout de la commande de déplacement vers le point d'arrivée de la hachure parallèle
+        gcode += "G1 X{:.2f} Y{:.2f}  E{:.2f}\n".format(x_arrivee, y_arrivee,  extrusion)
+
+        # Inversion de la direction de déplacement pour la prochaine passe
+        inverser_direction = not inverser_direction
+
+
+            
+        
+        
+        
     # Fin de la génération du fichier Gcode
     gcode += "G91 ; use relative positioning for the XYZ axes\n" 
     gcode += "G1 Z40 F4000 ; move 10mm to the right of the current location\n"
