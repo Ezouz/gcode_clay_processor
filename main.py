@@ -398,13 +398,15 @@ def generate_circle_gcode():
     # Définition des paramètres par l'utilisateur
     Xmax = 290 # Taille maximale de l'axe X en mm
     Ymax = 290 # Taille maximale de l'axe Y en mm
-    diametre_cercle = 80 # Diamètre du cercle à extruder en mm
+    diametre_cercle = 100 # Diamètre du cercle à extruder en mm
     diametre_buse = 2 # Diamètre de la buse en mm
     espacement_lignes = 3.2 # Espacement entre les lignes de remplissage en mm
     hauteur_first_Z = 2.25
     hauteur_de_couche = 1.5
     rayon=diametre_cercle/2
-    pas_deplacement=3.2
+    pas_deplacement=3.6
+    nb_couches_fond=6 #nombre de couches pleines (fond du vase)
+    hauteur_vase=250 #hauteur totale du vase
 
     # Définition des constantes
     rayon_cercle = diametre_cercle / 2
@@ -441,63 +443,106 @@ def generate_circle_gcode():
     gcode += "G1 F7800\n"
     
 
-    # Calcul des coordonnées du point de départ sur le cercle
-    angle_depart = 0
-    x_depart, y_depart = coordonnees_cercle(angle_depart)
+           
+   
 
-    # Ajout de la commande de déplacement à la hauteur Z 
-    gcode += "G1 X{:.2f} Y{:.2f}\n".format(x_depart, y_depart)
-    gcode += "M101 ; extruder on\n"
+  
+    
+
     gcode += ";END OF HOMING\n"
     gcode += ";\n"
     gcode += ";START OF GCODE\n"
-    gcode += "G1 F1800\n"
 
-    # Boucle pour générer les commandes de déplacement pour le cercle avec l'extrusion proportionnelle
-    angle = 0
-    while angle < 360:
-        x, y = coordonnees_cercle(angle)
-        gcode += "G1 X{:.2f} Y{:.2f} E{:.2f}\n".format(x, y, longueur_filament)
-        angle += 5 # Augmenter l'angle de 5 degrés à chaque itération pour déterminer les points du cercle
+    inverser_sens = False
+    actual_z_height = hauteur_first_Z
+    couche=0
+    angle_depart = 0
+    while actual_z_height<hauteur_vase:
+        
+        # Calcul des coordonnées du point de départ sur le cercle
+        if nb_couches_fond>couche:
+            angle_depart += 180
+            
+        
+        x_depart, y_depart = coordonnees_cercle(angle_depart)
+        gcode += "G1 X{:.2f} Y{:.2f}\n".format(x_depart, y_depart)
+        gcode += "M101 ; extruder on\n"
+        gcode += "G1 F1800\n"
+        
+        couche+=1
+        actual_z_height = hauteur_first_Z+hauteur_de_couche*couche
+        gcode += "G1 Z{:.2f}\n".format( actual_z_height)
+        
+        # Boucle pour générer les commandes de déplacement pour le cercle avec l'extrusion proportionnelle
+        
+        angle = angle_depart
+      
+        angle_max=angle+360
+        while angle < angle_max:
+            x, y = coordonnees_cercle(angle)
+            gcode += "G1 X{:.2f} Y{:.2f} E{:.2f}\n".format(x, y, longueur_filament)
+            angle += 5 # Augmenter l'angle de 5 degrés à chaque itération pour déterminer les points du cercle
 
-    # Retour au point de départ pour fermer le cercle
-    gcode += "G1 X{:.2f} Y{:.2f} E{:.2f}\n".format(x_depart, y_depart, longueur_filament)
-    
-    
-    
-    
-    
-    
+        # Retour au point de départ pour fermer le cercle
+        gcode += "G1 X{:.2f} Y{:.2f} E{:.2f}\n".format(x_depart, y_depart, longueur_filament)
+        
+        #retractation avant remplissage
+        gcode += "G1 E-2 F2400\n"
+        gcode += "M103 ; extruder off\n"
+        
+        
+        
 
-    # Calcul du nombre de passes nécessaires pour couvrir le diamètre du cercle
-    nombre_passes = int(diametre_cercle / pas_deplacement)
+        # Calcul du nombre de passes nécessaires pour couvrir le diamètre du cercle
+        nombre_passes = int((rayon-pas_deplacement)*2 / pas_deplacement)
 
-    # Variable pour inverser la direction de déplacement
-    inverser_direction = False
+        # Variable pour inverser la direction de déplacement
+        inverser_direction = False
+        if nb_couches_fond>couche:
+            # Boucle pour générer les mouvements de remplissage rectilinéaire
+            for passe in range(nombre_passes + 1):
+                
+                if inverser_sens:
+                    
+                    # Calcul des coordonnées du point de départ de la hachure parallèle
+                    x_depart = centre_x - math.sqrt((rayon-pas_deplacement)**2 - ((rayon-pas_deplacement) - passe * pas_deplacement)**2)
+                    y_depart = centre_y - ((rayon-pas_deplacement) - passe * pas_deplacement)
 
-    # Boucle pour générer les mouvements de remplissage rectilinéaire
-    for passe in range(nombre_passes + 1):
-        # Calcul des coordonnées du point de départ de la hachure parallèle
-        x_depart = centre_x - math.sqrt(rayon**2 - (rayon - passe * pas_deplacement)**2)
-        y_depart = centre_y - (rayon - passe * pas_deplacement)
+                    # Calcul des coordonnées du point d'arrivée de la hachure parallèle
+                    x_arrivee = centre_x + math.sqrt((rayon-pas_deplacement)**2 - ((rayon-pas_deplacement) - passe * pas_deplacement)**2)
+                    y_arrivee = centre_y - ((rayon-pas_deplacement) - passe * pas_deplacement)
+                else:
+                    # Calcul des coordonnées du point de départ de la hachure parallèle
+                    y_depart = centre_y - math.sqrt((rayon-pas_deplacement)**2 - ((rayon-pas_deplacement) - passe * pas_deplacement)**2)
+                    x_depart = centre_x - ((rayon-pas_deplacement) - passe * pas_deplacement)
 
-        # Calcul des coordonnées du point d'arrivée de la hachure parallèle
-        x_arrivee = centre_x + math.sqrt(rayon**2 - (rayon - passe * pas_deplacement)**2)
-        y_arrivee = centre_y - (rayon - passe * pas_deplacement)
+                    # Calcul des coordonnées du point d'arrivée de la hachure parallèle
+                    y_arrivee = centre_y + math.sqrt((rayon-pas_deplacement)**2 - ((rayon-pas_deplacement) - passe * pas_deplacement)**2)
+                    x_arrivee = centre_x - ((rayon-pas_deplacement) - passe * pas_deplacement)
 
-        # Inversion des points de départ et d'arrivée pour alterner la direction de déplacement
-        if inverser_direction:
-            x_depart, x_arrivee = x_arrivee, x_depart
-            y_depart, y_arrivee = y_arrivee, y_depart
 
-        # Ajout de la commande de déplacement vers le point de départ de la hachure parallèle
-        gcode += "G1 X{:.2f} Y{:.2f}  E{:.2f}\n".format(x_depart, y_depart,  extrusion)
+                # Inversion des points de départ et d'arrivée pour alterner la direction de déplacement
+                if inverser_direction:
+                    x_depart, x_arrivee = x_arrivee, x_depart
+                    y_depart, y_arrivee = y_arrivee, y_depart
 
-        # Ajout de la commande de déplacement vers le point d'arrivée de la hachure parallèle
-        gcode += "G1 X{:.2f} Y{:.2f}  E{:.2f}\n".format(x_arrivee, y_arrivee,  extrusion)
+                if passe>0:
+                    # Ajout de la commande de déplacement vers le point de départ de la hachure parallèle
+                    gcode += "G1 X{:.2f} Y{:.2f}  E{:.2f}\n".format(x_depart, y_depart,  extrusion)
+                    # Ajout de la commande de déplacement vers le point d'arrivée de la hachure parallèle
+                    gcode += "G1 X{:.2f} Y{:.2f}  E{:.2f}\n".format(x_arrivee, y_arrivee,  extrusion)
+                else:
+                    gcode += "G1 X{:.2f} Y{:.2f} E0\n".format(x_depart, y_depart)
+                    gcode += "G1 X{:.2f} Y{:.2f} E0\n".format(x_arrivee, y_arrivee)
+                    gcode += "M101 ; extruder on\n"
+                    gcode += "G1 F7400\n"
 
-        # Inversion de la direction de déplacement pour la prochaine passe
-        inverser_direction = not inverser_direction
+                # Inversion de la direction de déplacement pour la prochaine passe
+                inverser_direction = not inverser_direction
+                
+            gcode += "G1 E-2 F2400\n"
+            gcode += "M103 ; extruder off\n"
+            inverser_sens = not inverser_sens
 
 
             
