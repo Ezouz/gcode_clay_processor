@@ -65,8 +65,8 @@ def menu_principal(gcode_file_selected):
         if choix == "1":
             gcode_file_selected=scan_repertoire()
             menu_modif(gcode_file_selected)
-        # elif choix == "2":
-        #     generate_circle_gcode()
+        elif choix == "2":
+            gcode_utils.generate_circle_gcode()
         elif choix == "3":
             return # quitter()
         else:
