@@ -159,7 +159,7 @@ def scan_repertoire():
     print("Liste des fichiers Gcode :\n")
     j=0
     gcode_files = []  # Liste pour stocker les fichiers *.gcode
-    for i, filename in enumerate(os.listdir('Ressources')):  # Parcours des fichiers dans le répertoire du script
+    for i, filename in enumerate(os.listdir()):  # Parcours des fichiers dans le répertoire du script
         if filename.endswith('.gcode'):  # Vérification de l'extension du fichier
             gcode_files.append(filename)  # Ajout du fichier à la liste
             print(f"{j+1}. {filename}")  # Affichage du numéro et du nom du fichier
@@ -324,16 +324,8 @@ def clear_console():
     else:
         os.system('clear')  # Exécuter la commande système "clear" pour effacer la console
 
-
-
-def main():
-
-    
-    gcode_file_selected=scan_repertoire()
-    # Appel de la fonction pour scanner le répertoire
-    
-
-       # Boucle principale du menu
+def menu_modif():
+        # Boucle principale du menu
     while True:
         clear_console()
         print(f"Le fichier gcode sélectionné est : {gcode_file_selected}")
@@ -363,7 +355,40 @@ def main():
             quitter()
         else:
             print("Choix invalide. Veuillez réessayer.")
+
+def menu_principal():
+    gcode_file_selected=scan_repertoire()
+    # Appel de la fonction pour scanner le répertoire
+
+    # Boucle principale du menu
+    while True:
+        clear_console()
+        print("\nMenu Principal:\n")
+        print(tabulate([["1", "Modifier un fichier Gcode"],
+                    ["2", "Généré un fichier Gcode"],
+                    ["3", "Quitter"]],
+                    headers=['Option', 'Description'], tablefmt='plain'))  # Utilisation de tabulate pour afficher le menu
+
+      
+        choix = input("\nVeuillez entrer le numéro de votre choix : ")
+
+        if choix == "1":
+            gcode_file_selected=scan_repertoire()
+            menu_modif()
+        elif choix == "2":
+            modify_gcode_speed(gcode_file_selected)
+        elif choix == "3":
+            quitter()
+        else:
+            print("Choix invalide. Veuillez réessayer.")    
+
+def main():
+    menu_principal()
     
+  
+
+def generate_gcode_custom():
+    return
     
     
 
