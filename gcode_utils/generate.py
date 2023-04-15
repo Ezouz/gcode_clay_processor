@@ -1,18 +1,72 @@
 import math
 from .utils import const
 
+def calculer_distance_point(x1, y1, z1, x2, y2, z2):
+    distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2 + (z2 - z1)**2)
+    return distance
+
+
+_x=0
+_y=0
+_z=0
+_e=0
+extrude=False
+
+
+def gcode_sender(x,y,z,extrusion):
+
+    global _x
+    global _y
+    global _z
+    global _e
+    global extrude
+    
+    diametre_buse = 2 # Diamètre de la buse en mm
+    coefficient_extrusion=.002097
+    
+    gcode = "G1 "
+    if(x != _x):
+            gcode += "X{:.2f} ".format(x)
+    if(y != _y):
+            gcode += "Y{:.2f} ".format(y)
+    if(z != _z):
+            gcode += "Z{:.2f} ".format(z)
+            
+    if(extrusion and extrude):
+        _e+=calculer_distance_point(x,y,z,_x,_y,_z) * math.pi * (diametre_buse**2) * coefficient_extrusion
+        gcode += "E{:.2f} ".format(_e)
+    
+    gcode += "\n" 
+
+    _x=x
+    _y=y
+    _z=z
+    extrude=extrusion
+    if gcode == "G1 \n":
+        return ""
+    else :
+        return gcode
+
+
 def generate_circle_gcode():
+    
+  
+    global _x
+    global _y
+    global _z
+    global _e
+    global extrude
+    
+    
     #clear_console()
     # Définition des paramètres par l'utilisateur
     Xmax = 290 # Taille maximale de l'axe X en mm
     Ymax = 290 # Taille maximale de l'axe Y en mm
     diametre_cercle = 100 # Diamètre du cercle à extruder en mm
-    diametre_buse = 2 # Diamètre de la buse en mm
     espacement_lignes = 3.2 # Espacement entre les lignes de remplissage en mm
-    hauteur_first_Z = 2.25
+    hauteur_first_Z = 1.5
     hauteur_de_couche = 1.5
     rayon=diametre_cercle/2
-    pas_deplacement=3.6
     nb_couches_fond=6 #nombre de couches pleines (fond du vase)
     hauteur_vase=150 #hauteur totale du vase
     
@@ -23,33 +77,23 @@ def generate_circle_gcode():
     variance_starting_layer=10 #couche à laquelle débuter l'ondulation
     variance_actual_z=0
     variance_transition_layer=20 #nb de couche pour la transition entre flat a full ondulation
+    nb_de_vaguelette=10
+    nb_etoile=6
     
     # Définition des constantes
-    rayon_cercle = diametre_cercle / 2
     centre_x = Xmax / 2
     centre_y = Ymax / 2
-    # Calcul de la longueur totale du déplacement
-    deplacement_total = math.pi * diametre_cercle
-
-    # Calcul du nombre total d'extrusions nécessaires
-    extrusions_total = deplacement_total / diametre_buse
-
-    # Calcul de l'extrusion à chaque étape
-    extrusion = deplacement_total / extrusions_total
-
-    # Calcul de la longueur de filament nécessaire pour une extrusion complète d'un cercle
-    longueur_filament = math.pi * rayon_cercle * (diametre_buse / 2)
 
     # Fonction pour calculer les coordonnées X, Y d'un point sur le cercle
     def coordonnees_cercle(angle,variance=0):
-        x = centre_x + (rayon_cercle+variance) * math.cos(math.radians(angle))
-        y = centre_y + (rayon_cercle+variance) * math.sin(math.radians(angle))
+        x = centre_x + (rayon+variance) * math.cos(math.radians(angle))
+        y = centre_y + (rayon+variance) * math.sin(math.radians(angle))
         return x, y
 
-    # Début de la génération du fichier Gcode
-    gcode = ""
+    
 
     # Ajout de la commande d'homming etc.
+    gcode = ""
     gcode += "G28\n"
     gcode += "G1 Z5 F5000 ; lift nozzle\n"
     gcode += "M73 P0 ;printing progress 0%\n"
@@ -70,59 +114,50 @@ def generate_circle_gcode():
         # Calcul des coordonnées du point de départ sur le cercle
         if nb_couches_fond>couche:
             angle_depart += 180
-        
+            
+        actual_z_height = hauteur_first_Z+hauteur_de_couche*couche
         angle = angle_depart
       
         angle_max=angle+360
         coeff_reduction_variance_xy=(couche-variance_starting_layer)/variance_transition_layer
         coeff_reduction_variance_z=const((couche-variance_starting_layer)/variance_transition_layer,0,1)
-        variance_global=variance_z_max*math.cos(math.radians(angle)*4)*coeff_reduction_variance_xy
-        variance_actual_z=actual_z_height+variance_z_max*math.cos(math.radians(angle)*10)*coeff_reduction_variance_z
+        variance_global=variance_z_max*math.cos(math.radians(angle)*nb_etoile)*coeff_reduction_variance_xy
+        variance_actual_z=actual_z_height+variance_z_max*math.cos(math.radians(angle)*nb_de_vaguelette)*coeff_reduction_variance_z
         if variance_enable==1 and variance_starting_layer<couche:        
             x_depart, y_depart = coordonnees_cercle(angle,variance_global)
         else:
             x_depart, y_depart = coordonnees_cercle(angle)
-        gcode += "G1 X{:.2f} Y{:.2f}\n".format(x_depart, y_depart)
+        gcode +=gcode_sender(x_depart,y_depart,actual_z_height,False)
         gcode += "M101 ; extruder on\n"
         gcode += "G1 F1800\n"
         
-        couche+=1
-        actual_z_height = hauteur_first_Z+hauteur_de_couche*couche
+        
+        
         gcode += "G1 Z{:.2f}\n".format( actual_z_height)
         
-        # Boucle pour générer les commandes de déplacement pour le cercle avec l'extrusion proportionnelle
-        
-
-        
         if variance_enable==1 and variance_starting_layer<couche:
-            
             coeff_reduction_variance_xy=(couche-variance_starting_layer)/variance_transition_layer
             coeff_reduction_variance_z=const((couche-variance_starting_layer)/variance_transition_layer,0,1)
             while angle < angle_max:
-                variance_global=variance_z_max*math.cos(math.radians(angle)*4)*coeff_reduction_variance_xy
-                variance_actual_z=actual_z_height+variance_z_max*math.cos(math.radians(angle)*10)*coeff_reduction_variance_z
-                
+                variance_global=variance_z_max*math.cos(math.radians(angle)*nb_etoile)*coeff_reduction_variance_xy
+                variance_actual_z=actual_z_height+variance_z_max*math.cos(math.radians(angle)*nb_de_vaguelette)*coeff_reduction_variance_z
                 x, y = coordonnees_cercle(angle,variance_global)
-                
-                gcode += "G1 X{:.2f} Y{:.2f} Z{:.2f}  E{:.2f}\n".format(x, y,variance_actual_z, longueur_filament)
+                gcode +=gcode_sender(x,y,variance_actual_z,True)
                 angle += 2 # resolution plus fine
 
             # Retour au point de départ pour fermer le cercle
-            variance_global=variance_z_max*math.cos(math.radians(angle)*10)*coeff_reduction_variance_xy
-            variance_actual_z=actual_z_height+variance_z_max*math.cos(math.radians(angle)*10)*coeff_reduction_variance_z
+            variance_global=variance_z_max*math.cos(math.radians(angle)*nb_de_vaguelette)*coeff_reduction_variance_xy
+            variance_actual_z=actual_z_height+variance_z_max*math.cos(math.radians(angle)*nb_de_vaguelette)*coeff_reduction_variance_z
             x, y = coordonnees_cercle(angle,variance_global)
-            gcode += "G1 X{:.2f} Y{:.2f} Z{:.2f}  E{:.2f}\n".format(x, y,variance_actual_z, longueur_filament)
-        
+            gcode +=gcode_sender(x,y,variance_actual_z,True)
+
         else:
-        
             while angle < angle_max:
                 x, y = coordonnees_cercle(angle)
-                
-                gcode += "G1 X{:.2f} Y{:.2f} E{:.2f}\n".format(x, y, longueur_filament)
+                gcode +=gcode_sender(x,y,actual_z_height,True)
                 angle += 5 # Augmenter l'angle de 5 degrés à chaque itération pour déterminer les points du cercle
-
             # Retour au point de départ pour fermer le cercle
-            gcode += "G1 X{:.2f} Y{:.2f} E{:.2f}\n".format(x_depart, y_depart, longueur_filament)
+            gcode +=gcode_sender(x_depart,y_depart,actual_z_height,True)
 
 
 
@@ -130,31 +165,28 @@ def generate_circle_gcode():
         inverser_direction = False
         if nb_couches_fond>couche:
             #retractation avant remplissage
-            gcode += "G1 E-2 F2400\n"
             gcode += "M103 ; extruder off\n"
 
             # Calcul du nombre de passes nécessaires pour couvrir le diamètre du cercle
-            nombre_passes = int((rayon-pas_deplacement)*2 / pas_deplacement)
+            nombre_passes = int((rayon-espacement_lignes)*2 / espacement_lignes)
             # Boucle pour générer les mouvements de remplissage rectilinéaire
             for passe in range(nombre_passes + 1):
                 
                 if inverser_sens:
                     
                     # Calcul des coordonnées du point de départ de la hachure parallèle
-                    x_depart = centre_x - math.sqrt((rayon-pas_deplacement)**2 - ((rayon-pas_deplacement) - passe * pas_deplacement)**2)
-                    y_depart = centre_y - ((rayon-pas_deplacement) - passe * pas_deplacement)
-
+                    x_depart = centre_x - math.sqrt((rayon-espacement_lignes)**2 - ((rayon-espacement_lignes) - passe * espacement_lignes)**2)
+                    y_depart = centre_y - ((rayon-espacement_lignes) - passe * espacement_lignes)
                     # Calcul des coordonnées du point d'arrivée de la hachure parallèle
-                    x_arrivee = centre_x + math.sqrt((rayon-pas_deplacement)**2 - ((rayon-pas_deplacement) - passe * pas_deplacement)**2)
-                    y_arrivee = centre_y - ((rayon-pas_deplacement) - passe * pas_deplacement)
+                    x_arrivee = centre_x + math.sqrt((rayon-espacement_lignes)**2 - ((rayon-espacement_lignes) - passe * espacement_lignes)**2)
+                    y_arrivee = centre_y - ((rayon-espacement_lignes) - passe * espacement_lignes)
                 else:
                     # Calcul des coordonnées du point de départ de la hachure parallèle
-                    y_depart = centre_y - math.sqrt((rayon-pas_deplacement)**2 - ((rayon-pas_deplacement) - passe * pas_deplacement)**2)
-                    x_depart = centre_x - ((rayon-pas_deplacement) - passe * pas_deplacement)
-
+                    y_depart = centre_y - math.sqrt((rayon-espacement_lignes)**2 - ((rayon-espacement_lignes) - passe * espacement_lignes)**2)
+                    x_depart = centre_x - ((rayon-espacement_lignes) - passe * espacement_lignes)
                     # Calcul des coordonnées du point d'arrivée de la hachure parallèle
-                    y_arrivee = centre_y + math.sqrt((rayon-pas_deplacement)**2 - ((rayon-pas_deplacement) - passe * pas_deplacement)**2)
-                    x_arrivee = centre_x - ((rayon-pas_deplacement) - passe * pas_deplacement)
+                    y_arrivee = centre_y + math.sqrt((rayon-espacement_lignes)**2 - ((rayon-espacement_lignes) - passe * espacement_lignes)**2)
+                    x_arrivee = centre_x - ((rayon-espacement_lignes) - passe * espacement_lignes)
 
 
                 # Inversion des points de départ et d'arrivée pour alterner la direction de déplacement
@@ -164,27 +196,25 @@ def generate_circle_gcode():
 
                 if passe>0:
                     # Ajout de la commande de déplacement vers le point de départ de la hachure parallèle
-                    gcode += "G1 X{:.2f} Y{:.2f}  E{:.2f}\n".format(x_depart, y_depart,  extrusion)
-                    # Ajout de la commande de déplacement vers le point d'arrivée de la hachure parallèle
-                    gcode += "G1 X{:.2f} Y{:.2f}  E{:.2f}\n".format(x_arrivee, y_arrivee,  extrusion)
+                    gcode +=gcode_sender(x_depart,y_depart,actual_z_height,True)
+                    gcode +=gcode_sender(x_arrivee,y_arrivee,actual_z_height,True)
                 else:
-                    gcode += "G1 X{:.2f} Y{:.2f} E0\n".format(x_depart, y_depart)
-                    gcode += "G1 X{:.2f} Y{:.2f} E0\n".format(x_arrivee, y_arrivee)
+                    gcode +=gcode_sender(x_depart,y_depart,actual_z_height,False)
+                    
+                    gcode +=gcode_sender(x_arrivee,y_arrivee,actual_z_height,False)
+                    
                     gcode += "M101 ; extruder on\n"
-                    gcode += "G1 F7400\n"
+                    gcode += "G1 F1800\n"
 
                 # Inversion de la direction de déplacement pour la prochaine passe
                 inverser_direction = not inverser_direction
                 
-            gcode += "G1 E-2 F2400\n"
+            gcode += "G1 F2400\n"
             gcode += "M103 ; extruder off\n"
             inverser_sens = not inverser_sens
 
+        couche+=1
 
-            
-        
-        
-        
     # Fin de la génération du fichier Gcode
     gcode += "G91 ; use relative positioning for the XYZ axes\n" 
     gcode += "G1 Z10 F4000 ; move 10mm to the right of the current location\n"
@@ -203,3 +233,6 @@ def generate_circle_gcode():
 
     print("Fichier Gcode généré avec succès !")
     input("")
+    
+    
+    
