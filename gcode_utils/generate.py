@@ -26,15 +26,15 @@ def gcode_sender(x,y,z,extrusion):
     
     gcode = "G1 "
     if(x != _x):
-            gcode += "X{:.2f} ".format(x)
+            gcode += "X{:.3f} ".format(x)
     if(y != _y):
-            gcode += "Y{:.2f} ".format(y)
+            gcode += "Y{:.3f} ".format(y)
     if(z != _z):
-            gcode += "Z{:.2f} ".format(z)
+            gcode += "Z{:.3f} ".format(z)
             
     if(extrusion and extrude):
         _e+=calculer_distance_point(x,y,z,_x,_y,_z) * math.pi * (diametre_buse**2) * coefficient_extrusion
-        gcode += "E{:.2f} ".format(_e)
+        gcode += "E{:.5f} ".format(_e)
     
     gcode += "\n" 
 
