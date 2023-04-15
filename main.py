@@ -14,16 +14,16 @@ def main():
     # print('gcode.last_part_comments_start')
     # print(gcode.last_part_comments_start)
     # print('---------------------------------')
-    # print('gcode.layers')
-    # for index, layer in enumerate(gcode.layers):
-    #     print(layer, "\n")
-    # print('number of layers : ', len(gcode.layers))
-    # print('---------------------------------')
-    # print('gcode.spirals')
-    # for index, spiral in enumerate(gcode.spirals):
-    #     print(spiral, "\n")
-    # print('number of spirals : ', len(gcode.spirals))
-    # print('---------------------------------')
+    print('gcode.layers')
+    for index, layer in enumerate(gcode.layers):
+        print(layer, "\n")
+    print('number of layers : ', len(gcode.layers))
+    print('---------------------------------')
+    print('gcode.spirals')
+    for index, spiral in enumerate(gcode.spirals):
+        print(spiral, "\n")
+    print('number of spirals : ', len(gcode.spirals))
+    print('---------------------------------')
     
 
 # TODO
