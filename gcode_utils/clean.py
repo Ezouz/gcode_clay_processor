@@ -1,5 +1,5 @@
 import re
-from gcode_utils import modification_class
+from gcode_utils import Modification
 
 # clean useless "m102", "m103" et "m486" (for marlin 2)
 def clean_gcode_marlin2(object):
@@ -38,7 +38,7 @@ def clean_gcode_marlin2(object):
             print(ligne_supprimee.rstrip())
 
     params = []
-    modif = modification_class.Modification("instructions cleaning m102|m103|m486", params)
+    modif = Modification("instructions cleaning m102|m103|m486", params)
     object.modifications.append(modif)
     object.modified_gcode_lines = lignes_conserved
 

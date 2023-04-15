@@ -1,15 +1,20 @@
-from .gcode_class import *
+from .class_objects.gcode import *
+from .class_objects.modification import *
 
-from .utils import get_max_z, const
+from .directories import *
 
-from .buse import taille_buse
+from .utils import *
 
-from .clean import clean_gcode_marlin2
+from .buse import *
 
-from .scale import scale_gcode
+from .clean import *
 
-from .speed import modify_gcode_speed
+from .scale import *
 
-from .generate import generate_circle_gcode
+from .speed import *
 
-# __all__ = ['get_max_z', 'taille_buse', 'clean_gcode_marlin2', 'scale_gcode', 'modify_gcode_speed', 'generate_gcode_custom']
+from .mix_gcode import *
+
+from .generate import *
+
+__all__ = ['Modification', 'taille_buse', 'clean_gcode_marlin2', 'scale_gcode', 'modify_gcode_speed', 'generate_gcode_custom', 'const', 'change_base']

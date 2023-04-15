@@ -1,5 +1,5 @@
 import re
-from gcode_utils import modification_class
+from gcode_utils import Modification
 
 def modify_gcode_speed(object):
     print(f"\nLe fichier gcode sélectionné est : {object.name}\n")
@@ -42,7 +42,7 @@ def modify_gcode_speed(object):
     params = []
     params.append({'key': 'reduction_percentage', 'value': reduction_percentage})
     params.append({'key': 'height_reduction_speed', 'value': height_reduction_speed})
-    modif = modification_class.Modification("proportional speed reduction", params)
+    modif = Modification("proportional speed reduction", params)
     object.modifications.append(modif)
     object.modified_gcode_lines = new_lines
     return object

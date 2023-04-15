@@ -1,4 +1,4 @@
-from gcode_utils import modification_class
+from gcode_utils import Modification
 
 def scale_gcode(object):
     print(f"Le fichier gcode sélectionné est : {object.name}\n")
@@ -96,7 +96,7 @@ def scale_gcode(object):
     params.append({'key': 'Dimensions maximales X', 'value': x_max})
     params.append({'key': 'Dimensions maximales Y', 'value': y_max})
     params.append({'key': 'Dimensions maximales Z', 'value': z_max})
-    modif = modification_class.Modification("proportional scaling of gcode", params)
+    modif = Modification("proportional scaling of gcode", params)
     object.modifications.append(modif)
     object.modified_gcode_lines = new_lines
     return object

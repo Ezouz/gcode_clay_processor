@@ -1,4 +1,4 @@
-from gcode_utils import modification_class
+from gcode_utils import Modification
 
 def taille_buse(object):
     print(f"Le fichier gcode sélectionné est : {object.name}\n")
@@ -27,7 +27,7 @@ def taille_buse(object):
     params.append({'key': 'Extrusion reduction percentage', 'value': pourcentage_reduction})
     params.append({'key': 'base diameter', 'value': diametre_base})
     params.append({'key': 'new diameter', 'value': diametre_nouveau})
-    modif = modification_class.Modification("scale nozzle diameter proportionally", params)
+    modif = Modification("scale nozzle diameter proportionally", params)
     object.modifications.append(modif)
     object.modified_gcode_lines = new_lines
     return object
