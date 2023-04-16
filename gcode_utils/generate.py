@@ -22,7 +22,7 @@ def gcode_sender(x,y,z,extrusion):
     global extrude
     
     diametre_buse = 2 # Diamètre de la buse en mm
-    coefficient_extrusion=.002097
+    coefficient_extrusion=.008388*.35
     
     gcode = "G1 "
     if(x != _x):
@@ -33,7 +33,7 @@ def gcode_sender(x,y,z,extrusion):
             gcode += "Z{:.3f} ".format(z)
             
     if(extrusion and extrude):
-        _e+=calculer_distance_point(x,y,z,_x,_y,_z) * math.pi * (diametre_buse**2) * coefficient_extrusion
+        _e+=calculer_distance_point(x,y,z,_x,_y,_z) * math.pi * ((diametre_buse/2)**2) * coefficient_extrusion
         gcode += "E{:.5f} ".format(_e)
     
     gcode += "\n" 
@@ -50,7 +50,7 @@ def gcode_sender(x,y,z,extrusion):
 
 def generate_circle_gcode():
     
-  
+    fond_en_cours=1
     global _x
     global _y
     global _z
@@ -63,22 +63,23 @@ def generate_circle_gcode():
     Xmax = 290 # Taille maximale de l'axe X en mm
     Ymax = 290 # Taille maximale de l'axe Y en mm
     diametre_cercle = 100 # Diamètre du cercle à extruder en mm
-    espacement_lignes = 3.2 # Espacement entre les lignes de remplissage en mm
-    hauteur_first_Z = 1.5
-    hauteur_de_couche = 1.5
+    espacement_lignes = 4 # Espacement entre les lignes de remplissage en mm
+    hauteur_first_Z = 1
+    hauteur_de_couche = 0.4
     rayon=diametre_cercle/2
-    nb_couches_fond=6 #nombre de couches pleines (fond du vase)
+    nb_couches_fond=16 #nombre de couches pleines (fond du vase)
     hauteur_vase=150 #hauteur totale du vase
     
     
     #variance de Z(ondulation...)
-    variance_z_max=6 #mm de variance de hauteur maximum
     variance_enable=1
-    variance_starting_layer=10 #couche à laquelle débuter l'ondulation
+    variance_z_max=6 #mm de variance de hauteur maximum
+    variance_starting_layer=24 #couche à laquelle débuter l'ondulation
     variance_actual_z=0
-    variance_transition_layer=20 #nb de couche pour la transition entre flat a full ondulation
-    nb_de_vaguelette=10
-    nb_etoile=6
+    variance_transition_layer=60 #nb de couche pour la transition entre flat a full ondulation
+    nb_de_vaguelette=8
+    nb_etoile=13
+    taille_petale=.3
     
     # Définition des constantes
     centre_x = Xmax / 2
@@ -114,50 +115,80 @@ def generate_circle_gcode():
         # Calcul des coordonnées du point de départ sur le cercle
         if nb_couches_fond>couche:
             angle_depart += 180
+            angle = angle_depart
+            actual_z_height = hauteur_first_Z+hauteur_de_couche*couche
+        else:
+            angle_depart =0
+            angle = angle_depart
             
-        actual_z_height = hauteur_first_Z+hauteur_de_couche*couche
-        angle = angle_depart
+           
+            
+        
       
         angle_max=angle+360
         coeff_reduction_variance_xy=(couche-variance_starting_layer)/variance_transition_layer
         coeff_reduction_variance_z=const((couche-variance_starting_layer)/variance_transition_layer,0,1)
-        variance_global=variance_z_max*math.cos(math.radians(angle)*nb_etoile)*coeff_reduction_variance_xy
+        if nb_couches_fond<couche:
+            actual_z_height += hauteur_de_couche/360*2
+        variance_global=(variance_z_max*math.cos(math.radians(angle)*nb_etoile)*coeff_reduction_variance_xy)*taille_petale
         variance_actual_z=actual_z_height+variance_z_max*math.cos(math.radians(angle)*nb_de_vaguelette)*coeff_reduction_variance_z
         if variance_enable==1 and variance_starting_layer<couche:        
             x_depart, y_depart = coordonnees_cercle(angle,variance_global)
+            gcode +=gcode_sender(x_depart,y_depart,variance_actual_z,False)
         else:
             x_depart, y_depart = coordonnees_cercle(angle)
-        gcode +=gcode_sender(x_depart,y_depart,actual_z_height,False)
+            gcode +=gcode_sender(x_depart,y_depart,actual_z_height,False)
         gcode += "M101 ; extruder on\n"
         gcode += "G1 F1800\n"
         
         
-        
-        gcode += "G1 Z{:.2f}\n".format( actual_z_height)
+        if nb_couches_fond>couche:
+            gcode += "G1 Z{:.2f}\n".format( actual_z_height)
         
         if variance_enable==1 and variance_starting_layer<couche:
             coeff_reduction_variance_xy=(couche-variance_starting_layer)/variance_transition_layer
             coeff_reduction_variance_z=const((couche-variance_starting_layer)/variance_transition_layer,0,1)
             while angle < angle_max:
-                variance_global=variance_z_max*math.cos(math.radians(angle)*nb_etoile)*coeff_reduction_variance_xy
+                if nb_couches_fond<couche:
+                    actual_z_height += hauteur_de_couche/360*2
+                
+                variance_global=(variance_z_max*math.cos(math.radians(angle)*nb_etoile)*coeff_reduction_variance_xy)*taille_petale
                 variance_actual_z=actual_z_height+variance_z_max*math.cos(math.radians(angle)*nb_de_vaguelette)*coeff_reduction_variance_z
                 x, y = coordonnees_cercle(angle,variance_global)
                 gcode +=gcode_sender(x,y,variance_actual_z,True)
                 angle += 2 # resolution plus fine
 
             # Retour au point de départ pour fermer le cercle
-            variance_global=variance_z_max*math.cos(math.radians(angle)*nb_de_vaguelette)*coeff_reduction_variance_xy
+            if nb_couches_fond<couche:
+                actual_z_height += hauteur_de_couche/360*2
+            variance_global=(variance_z_max*math.cos(math.radians(angle)*nb_de_vaguelette)*coeff_reduction_variance_xy)*taille_petale
             variance_actual_z=actual_z_height+variance_z_max*math.cos(math.radians(angle)*nb_de_vaguelette)*coeff_reduction_variance_z
+           
             x, y = coordonnees_cercle(angle,variance_global)
             gcode +=gcode_sender(x,y,variance_actual_z,True)
 
+
+
+
         else:
             while angle < angle_max:
+                
+                if nb_couches_fond<couche:
+                    actual_z_height += hauteur_de_couche/360*5
+                
+                
                 x, y = coordonnees_cercle(angle)
                 gcode +=gcode_sender(x,y,actual_z_height,True)
                 angle += 5 # Augmenter l'angle de 5 degrés à chaque itération pour déterminer les points du cercle
             # Retour au point de départ pour fermer le cercle
+           
             gcode +=gcode_sender(x_depart,y_depart,actual_z_height,True)
+
+
+
+
+
+
 
 
 

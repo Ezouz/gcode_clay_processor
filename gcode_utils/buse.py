@@ -8,7 +8,10 @@ def taille_buse(object):
     diametre_nouveau = float(input("Veuillez entrer le nouveau diamètre de la buse en mm : "))
 
     # Calcule le pourcentage de réduction d'extrusion
-    pourcentage_reduction = ( diametre_nouveau/diametre_base) * 100
+    old_nozzle_area =(diametre_base/2) ** 2 * 3.14159265  # Surface de la buse d'origine (pi * r^2)
+    new_nozzle_area = (diametre_nouveau/2) ** 2 * 3.14159265  # Surface de la nouvelle buse (pi * r^2)
+    pourcentage_reduction = (new_nozzle_area / old_nozzle_area) * 100 # Calcul de la nouvelle valeur d'extrusion
+
 
     new_lines = object.modified_gcode_lines
 

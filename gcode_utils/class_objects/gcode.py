@@ -16,9 +16,9 @@ class Gcode:
         # current dateTime
         now = datetime.now()
         # convert to string
-        date_time_str = now.strftime("%Y-%m-%d_%H:%M:%S")
+        date_time_str = now.strftime("%y%m%d_%H%M%S")
         # Enregistrer les nouvelles lignes dans un nouveau fichier GCode
-        new_file_name = self.name + "_modified_" + date_time_str
+        new_file_name = self.name[:-6] + "_modified_" + date_time_str + ".gcode"
         with open('Generated_files/' + new_file_name, 'w') as new_file:
             new_file.writelines(self.describeModifications())
             new_file.writelines(["\n","\n", "; Beguinning of the modified file\n"])

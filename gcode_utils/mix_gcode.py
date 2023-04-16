@@ -27,17 +27,18 @@ def change_base(object):
     index = None
     diff_min = float('inf')
     for i, d in enumerate(gcode_base.layers):
-        if d['height'] < spiral_start:
+        if d['height'] <= spiral_start:
             diff = abs(spiral_start - d['height'])
-            if diff < diff_min:
+            if diff <= diff_min:
+                print(diff_min)
                 diff_min = diff
                 index = i
-
+                
     new_lines = []
 
     #ecrire la base jusqu'a l'index indiqué
     for i, line in enumerate(gcode_base.modified_gcode_lines):
-        if i < gcode_base.layers[index]['end_index']:
+        if i <= gcode_base.layers[index]['end_index']:
             new_lines.append(line)
         else:
             break
@@ -68,4 +69,5 @@ def change_base(object):
     modif = Modification("Paste base layers from another gcode", params)
     object.modifications.append(modif)
     object.modified_gcode_lines = new_lines
+    input('')
     return object
