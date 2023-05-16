@@ -2,9 +2,11 @@
 trouver la meilleure rotation possible pour etre contenu dans un rectangle
 
 """
-
+import re
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.spatial.distance import cdist
+import math
 
 def rotate_points(points, angle):
     """Effectue une rotation de `angle` degrés sur les points donnés."""
@@ -45,28 +47,99 @@ def visualize(points, rotated_points, rectangle_points, rotated_rectangle_points
     plt.show()
 
 # Lecture du fichier Gcode
-gcode_file = '4.nc'
+gcode_file = '1.nc'
+
+
+# points = []
+# with open(gcode_file, 'r') as file:
+#     for line in file:
+#         if 'X' in line or 'Y' in line:
+#             tokens = line.split()
+#             x_index = None
+#             y_index = None
+#             for i, token in enumerate(tokens):
+#                 if token.startswith('X'):
+#                     x_index = i
+#                 elif token.startswith('Y'):
+#                     y_index = i
+#             if x_index is not None and y_index is not None:
+#                 x = float(tokens[x_index][1:])
+#                 y = float(tokens[y_index][1:])
+#                 if [x, y] not in points:
+#                     points.append([x, y])
+
 
 
 points = []
 with open(gcode_file, 'r') as file:
+    lastx = None
+    lasty = None
+    x = None
+    y = None
+    i = None
+    j = None
+    last_command = None
     for line in file:
-        if 'X' in line or 'Y' in line:
-            tokens = line.split()
-            x_index = None
-            y_index = None
-            for i, token in enumerate(tokens):
-                if token.startswith('X'):
-                    x_index = i
-                elif token.startswith('Y'):
-                    y_index = i
-            if x_index is not None and y_index is not None:
-                x = float(tokens[x_index][1:])
-                y = float(tokens[y_index][1:])
-                points.append([x, y])
+        i = None
+        j = None
+        match = re.search(r'I([-]?[\d.]+).*J([-]?[\d.]+)', line)
+        if match:
+            if (last_command == 'G2'or line.startswith('G2')) and not line.startswith('G3'):
+                print("G2")
+                direction = -1
+            else:
+                print("G3")                
+                direction = 1
+            i = float(match.group(1))
+            j = float(match.group(2))
+        
+        match = re.search(r'(X([-]?[\d.]+))?.*(Y([-]?[\d.]+))?', line)
+        if match:
+            for word in line.split():
+                if word.startswith('X'):
+                    x = float(word[1:])
+                elif word.startswith('Y'):
+                    y = float(word[1:])
+            
+        if i is not None and j is not None:
+            radius = math.sqrt((i) ** 2 + (j) ** 2)
+            start_angle = math.atan2(lasty-(lasty+j), lastx-(lastx+i) )
+ 
+            print (start_angle)
+            end_angle = math.atan2(y-(lasty+j) , x-(lastx+i) )
+            print (end_angle )
+            
+            if direction == 1:
+                if end_angle <= start_angle:
+                    end_angle += 2 * math.pi
+            else:
+                if start_angle <= end_angle:
+                    start_angle += 2 * math.pi
+            angle_step = (end_angle - start_angle) / 15
+            for angle in np.arange(start_angle, end_angle + angle_step, angle_step):
+                px = lastx+i + radius * math.cos(angle)
+                py = lasty+j + radius * math.sin(angle)
+                if px is not None and py is not None:
+                    points.append([px, py])
+        else:
+            if x is not None and y is not None:
+                points.append([x, y])            
+        
+        lastx=x
+        lasty=y
+        if line.startswith('G2') or line.startswith('G3'):
+            last_command = line[0:2]
+
+
+
 
 # Conversion en tableau numpy
 points = np.array(points)
+
+# Supprimer les points identiques
+# points = np.unique(points, axis=0)
+
+# Supprimer les points proches
 
 
 # Calcul du rectangle initial
