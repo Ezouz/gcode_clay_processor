@@ -115,7 +115,7 @@ with open(gcode_file, 'r') as file:
             else:
                 if start_angle <= end_angle:
                     start_angle += 2 * math.pi
-            angle_step = (end_angle - start_angle) / 15
+            angle_step = (end_angle - start_angle) / 3
             for angle in np.arange(start_angle, end_angle + angle_step, angle_step):
                 px = lastx+i + radius * math.cos(angle)
                 py = lasty+j + radius * math.sin(angle)
@@ -154,7 +154,7 @@ rectangle_points = np.array([[min_x, min_y],
 best_angle = 0
 best_score = float('inf')
 
-for angle in range(0, 181, 1):
+for angle in np.arange(0, 181, 0.1):
     rotated_points = rotate_points(points, angle)
     min_x,    max_x, min_y, max_y = calculate_bounding_rectangle(rotated_points)
     score = (max_x - min_x) + (max_y - min_y)  # Score basé sur la taille du rectangle englobant
