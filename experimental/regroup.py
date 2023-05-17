@@ -9,16 +9,25 @@ import os
 import hashlib
 from rectpack import newPacker
 import random
+import seaborn as sns
 
 # **************************************
 #         CLASS
 # **************************************
 
 class Box:
-    def __init__(self, x, y, count):
-        self.x = x
-        self.y = y
-        self.count = count
+    def __init__(self, file,ox,oy, x, y, angle, count):
+        self.file = str(file)
+        self.x = float(x)                   #width
+        self.y = float(y)                   #height
+        self.ox = float(ox)                 #originX
+        self.oy = float(oy)                 #originY
+        self.angle =  float(angle)
+        self.count = int(count)
+        
+
+
+
 
 
 # **************************************
@@ -26,23 +35,25 @@ class Box:
 # **************************************
 
 def aranger(box,surface):
-    # Collecte des informations
-    surface=1.2,1.2
+    
+    # file_name= []
     # Placement des boîtes
     packer = newPacker(rotation=True) # Autoriser la rotation des boîtes
-    for i in range(len(box)):
-        for _ in range(box.count[i]):
-            packer.add_rect(*box.x,box.y)
-    packer.add_bin(surface)
+    for b in box:
+        for _ in range(b.count):
+            packer.add_rect(b.x, b.y,b.file)
+            #file_name.append(b.file)
+        packer.add_bin(surface[0],surface[1])
 
-    total_boxes = sum(box.count)
+    total_boxes = sum([b.count for b in box])
+    palette = sns.color_palette("flare",total_boxes)
     packed_boxes = 0
     while packed_boxes < total_boxes:
         # Ajout d'une nouvelle surface si toutes les boîtes n'ont pas été placées
         packer.pack()
         packed_boxes = sum([len(abin) for abin in packer])
         if packed_boxes < total_boxes:
-            packer.add_bin(surface)
+            packer.add_bin(surface[0], surface[1])
 
     # Génération de couleurs uniques pour chaque boîte
     colors = []
@@ -54,14 +65,41 @@ def aranger(box,surface):
     color_index = 0
     for abin in packer:
         # Ajout d'un contour à la surface
-        plt.gca().add_patch(plt.Rectangle((surface_x_offset, 0), surface, fill=False))
+        plt.gca().add_patch(plt.Rectangle((surface_x_offset, 0), surface[0], surface[1], fill=False))
         for rect in abin.rect_list():
             x, y, w, h, rid = rect
-            plt.gca().add_patch(plt.Rectangle((x + surface_x_offset , y ), w, h, facecolor=colors[color_index]))
+            #print(f"x: {x}, y: {y}, w: {w}, h: {h}, rid: {rid}")
+            
+            plt.gca().add_patch(plt.Rectangle((x + surface_x_offset , y ), w, h, facecolor=palette[color_index]))
+            
+            fichier_md5 = 'checksums.md5'
+            md5_dict = {}
+            if os.path.exists(fichier_md5):
+                with open(fichier_md5, 'r') as f:
+                    for ligne in f:
+                        md5_hash, chemin, angle,ox,oy,oxr,oyr,sizex,sizey = ligne.strip().split('  ')
+                        md5_dict[chemin] = (md5_hash, angle,ox,oy,oxr,oyr,sizex,sizey)
+            angle,ox,oy,oxr,oyr,sizex,sizey = get_box_from_md5(rid, md5_dict)
+            
+            
+            fichier_export, _ = os.path.splitext(rid)
+            if(sizex==w):
+                fichier_export = fichier_export + ".point"
+            else:
+                fichier_export = fichier_export + "_r.point"
+            points_importes = importer_points(fichier_export)
+            points_importes=translate_points(points_importes,-x - surface_x_offset,0,-y,0)
+            points_importes = np.array(points_importes)  # Convertir la liste en un tableau NumPy
+            plt.plot(points_importes[:, 0], points_importes[:, 1], color='black', label='Forme avec rotation')
+            plt.plot([points_importes[-1, 0], points_importes[0, 0]], [points_importes[-1, 1], points_importes[0, 1]], color='green')  # Relier le dernier point au premier
+                
+            
+            
             color_index += 1
         surface_x_offset += surface[0] + 1
     plt.xlim(0, surface[0])
     plt.ylim(0, surface[1])
+    plt.axis('equal')
     plt.show()
 
 
@@ -70,6 +108,27 @@ def aranger(box,surface):
 # **************************************
 #     TROUVE LE MEILLEUR ANGLE
 # **************************************
+
+def translate_points(points, min_x, max_x, min_y, max_y):
+    """
+    Effectue une translation sur les points pour ajuster la forme.
+
+    Arguments:
+    - points : Liste de points.
+    - min_x, max_x, min_y, max_y : Bords de la forme après rotation.
+
+    Retour :
+    - translated_points : Liste de points après translation.
+    """
+    translated_points = []
+    translation_x = -min_x
+    translation_y = -min_y
+
+    for point in points:
+        translated_point = [point[0] + translation_x, point[1] + translation_y]
+        translated_points.append(translated_point)
+
+    return translated_points
 
 def rotate_points(points, angle):
     """Effectue une rotation de `angle` degrés sur les points donnés."""
@@ -200,16 +259,37 @@ def bestangle(gcode_file):
                                     [max_x, max_y],
                                     [min_x, max_y],
                                     [min_x, min_y]])
-
-    # Affichage de l'angle de rotation
-    print("Angle de rotation appliquée:", best_angle)
+    
+    translated_points = translate_points(rotated_points, min_x, max_x, min_y, max_y)
+    translated_points = np.array(translated_points)
+    print("Angle de rotation appliquée:", best_angle, " avec un décallage de " , min_x, " et ", min_y, " pour le fichier", gcode_file)
+    chemin_fichier, _ = os.path.splitext(gcode_file)
+    chemin_export = chemin_fichier + ".point"
+    exporter_points(chemin_export, translated_points)
+    
+    
+    #rotation a 90 degres
+    rotated_points = rotate_points(translated_points, 90)
+    min_x_r, max_x_r, min_y_r, max_y_r = calculate_bounding_rectangle(rotated_points)
+    best_rectangle_points = np.array([[min_x_r, min_y_r],
+                                    [max_x_r, min_y_r],
+                                    [max_x_r, max_y_r],
+                                    [min_x_r, max_y_r],
+                                    [min_x_r, min_y_r]])
+    translated_points = translate_points(rotated_points, min_x_r, max_x_r, min_y_r, max_y_r)
+    translated_points = np.array(translated_points)
+    print("Ratation à 90 degrès appliquée: avec un décallage de " , min_x_r, " et ", min_y_r, " pour le fichier", gcode_file)
+    print("---")
+    chemin_fichier, _ = os.path.splitext(gcode_file)
+    chemin_export = chemin_fichier + "_r.point"
+    exporter_points(chemin_export, translated_points)
     
     # Affichage de la forme d'origine et de la forme avec la meilleure rotation
-    visualize(points, rotated_points, rectangle_points, best_rectangle_points)
-    sizex="{:.3f}".format(max_x-min_x)
-    sizey="{:.3f}".format(max_y-min_y)
+    visualize(points, translated_points, rectangle_points, best_rectangle_points)
+    sizex = "{:.3f}".format(abs(max_x - min_x))
+    sizey = "{:.3f}".format(abs(max_y - min_y))
     
-    return(best_angle, sizex,sizey)
+    return(best_angle, min_x,min_y,min_x_r,min_y_r,sizex,sizey)
 
 
 # **************************************
@@ -227,8 +307,8 @@ def main():
     if os.path.exists(fichier_md5):
         with open(fichier_md5, 'r') as f:
             for ligne in f:
-                md5_hash, chemin, angle,sizex,sizey = ligne.strip().split('  ')
-                md5_dict[chemin] = (md5_hash, angle,sizex,sizey)
+                md5_hash, chemin, angle,ox,oy,oxr,oyr,sizex,sizey = ligne.strip().split('  ')
+                md5_dict[chemin] = (md5_hash, angle,ox,oy,oxr,oyr,sizex,sizey)
 
     repertoire = './'
     files_available = []  # Liste pour stocker les fichiers G-code disponibles avec leurs numéros
@@ -246,13 +326,13 @@ def main():
                         if md5_hash != md5_dict[chemin][0]:
                             print(f"Le fichier {chemin} a été modifié.")
                     else:
-                        angle,sizex,sizey = bestangle(fichier)  # Remplacez `bestangle(fichier)` par le code approprié pour obtenir la valeur de `angle` pour chaque fichier
-                        md5_dict[chemin] = (md5_hash, angle,sizex,sizey)
+                        angle,ox,oy,oxr,oyr,sizex,sizey = bestangle(fichier)  
+                        md5_dict[chemin] = (md5_hash, angle,ox,oy,oxr,oyr,sizex,sizey)
 
     # Enregistrer les nouvelles empreintes MD5 et angles dans le fichier de checksums
     with open(fichier_md5, 'w') as f:
-        for chemin, (md5_hash, angle,sizex,sizey) in md5_dict.items():
-            f.write(f"{md5_hash}  {chemin}  {angle}  {sizex}  {sizey}\n")
+        for chemin, (md5_hash, angle,ox,oy,oxr,oyr,sizex,sizey) in md5_dict.items():
+            f.write(f"{md5_hash}  {chemin}  {angle}  {ox}  {oy}  {oxr}  {oyr}  {sizex}  {sizey}\n")
 
     # Afficher le contenu du fichier de checksums
     print("Contenu du fichier de checksums :")
@@ -281,20 +361,49 @@ def main():
     for fichier in selected_files:
         print(fichier)
 
-   
-    quantities = []
+    # Création du tableau de la classe Box
+    box_list = []
+    boxes_files =[]
+    boxes =[]
+    box_counts=[]
+
     for file in selected_files:
         quantity = int(input(f"Entrez la quantité pour le fichier {file}: "))
-        quantities.append(quantity)
+        angle,ox,oy,oxr,oyr,sizex,sizey = get_box_from_md5(file, md5_dict)
+        boxes_files.append(file)
+        tmpB=ox,oy,sizex,sizey,angle
+        boxes.append(tmpB)
+        box_counts.append(quantity)
+        
 
-    raw_size_x = float(input("Entrez la taille du brut (axe X): "))
-    raw_size_y = float(input("Entrez la taille du brut (axe Y): "))
+    raw_size_x_input = input("Entrez la taille du brut (axe X): ")
+    raw_size_x = float(raw_size_x_input) if raw_size_x_input else 300
+
+    raw_size_y_input = input("Entrez la taille du brut (axe Y): ")
+    raw_size_y = float(raw_size_y_input) if raw_size_y_input else 300
+    
     raw_size = (raw_size_x, raw_size_y)
     # margin = float(input("Entrez la marge entre les pièces: "))
     
-    box = Box(x, y, count)
     
-    aranger(box,raw_size)
+    clear_terminal()
+   
+
+    # Parcours des données des boîtes et création des objets Box
+    for i in range(len(boxes_files)):
+        file = boxes_files[i]
+        ox,oy,x, y,angle = boxes[i]
+        count = box_counts[i]
+        box = Box(file,ox,oy,x, y,angle, count)
+        box_list.append(box)
+        info = "File: "+ box.file +"  x: "+ str(box.x) +"  y: "+ str(box.y) +"  angle: "+ str(box.angle )+"  count: "+ str(box.count)
+        print(info)
+    
+    print("Taille du brut (axe X):", raw_size_x)
+    print("Taille du brut (axe Y):", raw_size_y)
+        
+    
+    aranger(box_list,raw_size)
 
 
 
@@ -339,6 +448,44 @@ def clear_terminal():
     else:  # Pour Unix/Linux/Mac
         _ = os.system('clear')
 
+def get_box_from_md5(filename, md5_dict):
+    for chemin, (md5_hash, angle,ox,oy,oxr,oyr,sizex,sizey) in md5_dict.items():
+        if "./"+os.path.basename(chemin) == filename:
+            return float(angle),float(ox),float(oy),float(oxr),float(oyr),float(sizex),float(sizey)
+    return
+
+def exporter_points(chemin_fichier, points):
+    """
+    Exporte les points dans un fichier texte.
+
+    Arguments :
+    - chemin_fichier : Chemin du fichier de sortie.
+    - points : Liste de tuples (x, y) représentant les points.
+
+    """
+    with open(chemin_fichier, 'w') as fichier:
+        for point in points:
+            fichier.write(f"{point[0]},{point[1]}\n")
+
+    print("Les points ont été exportés avec succès.")
+
+def importer_points(chemin_fichier):
+    """
+    Importe les points à partir d'un fichier texte.
+
+    Argument :
+    - chemin_fichier : Chemin du fichier d'entrée.
+
+    Retour :
+    - points : Liste de tuples (x, y) représentant les points.
+    """
+    points = []
+    with open(chemin_fichier, 'r') as fichier:
+        for ligne in fichier:
+            x, y = ligne.strip().split(',')
+            points.append((float(x), float(y)))
+
+    return points
 
 if __name__ == "__main__":
     main()

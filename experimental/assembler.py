@@ -1,5 +1,5 @@
 """
-assemblage de plusieurs Gcode - obsolete
+assemblage de plusieurs Gcode - obsolete mais translation surement a recuperer
 
 """
 
