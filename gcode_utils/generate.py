@@ -1,6 +1,5 @@
 import math
 from utils import const
-import math
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.widgets import Slider, Button
@@ -66,7 +65,6 @@ def initialize_values():
     extrude=False
 
 def update_plot(x, y, z):
-    # Plot the coordinates
     global fig
     global ax
 

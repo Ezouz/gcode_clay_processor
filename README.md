@@ -1,9 +1,11 @@
-# requierement
+## requierement
 matplotlib
 
-# gcode_clay_processor
+## gcode_clay_processor ##
+#gcode generator#
+`python3 -m gcode_clay_processor.gcode_generator.index`
 
-
+#gcode utils
 class Gcode initializated from a loaded gcode file : 
 
 - first_part_comments_end is the index of last series of parsed lines that are comments in the gcode file.
