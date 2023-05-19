@@ -1,3 +1,6 @@
+# requierement
+matplotlib
+
 # gcode_clay_processor
 
 
@@ -24,12 +27,3 @@ the variable end_index is the line index of the last line of the spiral that con
 
     horizontal_movement_without_extrusion = {} # X || Y !Z height = z in the transition
     vertical_movement_without_extrusion = {} # Z !X !Y
-
-
-
-i need a function in python to get a list of layers in a gcode file stored in a variable layers that is an array containing objects that have properties : start_index, end_index, height. 
-The program delimitate differents layers (which are blocks of lines) when it finds a line starting with a G1 command and a Z coordinate, followed by at least 2 lines starting with a G1 command and not containing any Z but containing a E. The layer is composed by all the lines until the next occurence of a line starting with a G1 command and a Z coordinate.
-
-the height variable contain the value of the Z coordinate mentioned just before.
-the variable start_index is the line index of the first line of the layer that contain the instruction G1 and does not contains any Z coordinate.
-the variable end_index is the line index of the last line of the layer that contain the instruction G1 and does not contains any Z coordinate.
