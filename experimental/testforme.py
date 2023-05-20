@@ -22,7 +22,7 @@ class Shape:
 
 
 shapes = [
-    Shape((2.153, 4.813), 8, 'red'),     # Cercle
+    Shape((2.153, 4.813), 25, 'red'),     # Cercle
     Shape((3.3333, 1), 8, 'yellow'),      # Triangle
     Shape((10.34, 1.65), 6, 'pink'),      # Autre
     Shape((1.1, 1.24), 12, 'green'),        # Carré
