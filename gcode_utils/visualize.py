@@ -1,12 +1,16 @@
-from src.menu import menu_principal
-from gcode_utils import gcode_class
+# from src.menu import menu_principal
+# from gcode_utils import gcode_class
 import pygame
 import math
 from pygame.locals import *
 import sys
 
-def main():
- 
+def visualize(object):
+    print(f"Le fichier gcode sélectionné est : {object.name}\n")
+    print("\n")
+    print(object.describeModifications())
+    object.show()
+
    # Paramètres d'affichage
     SCREEN_WIDTH = 600
     SCREEN_HEIGHT = 600
@@ -45,12 +49,10 @@ def main():
     pygame.display.set_caption('Affichage G-code en 3/4 avec rotation en Pygame')
 
     # Charger le fichier G-code
-    gcode_file_path = 'gcode_extrusion_cercle.gcode'  # Mettez ici le chemin vers votre fichier G-code
+    gcode_file_path = "Ressources/" + object.name  # Mettez ici le chemin vers votre fichier G-code
     gcode_lines = load_gcode(gcode_file_path)
 
-    
-    
-        # Récupérer les coordonnées min et max du modèle
+    # Récupérer les coordonnées min et max du modèle
     min_x = float('inf')
     max_x = float('-inf')
     min_y = float('inf')

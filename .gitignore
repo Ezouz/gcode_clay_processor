@@ -4,3 +4,5 @@ Generated_files/*
 __pycache__/
 *.pyc
 test ML/
+build/
+gcode_clay_processor.egg-info

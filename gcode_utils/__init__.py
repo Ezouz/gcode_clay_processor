@@ -17,4 +17,6 @@ from .mix_gcode import *
 
 from .generate import *
 
-__all__ = ['Modification', 'taille_buse', 'clean_gcode_marlin2', 'scale_gcode', 'modify_gcode_speed', 'generate_gcode_custom', 'const', 'change_base']
+from .visualize import *
+
+__all__ = ['Modification', 'taille_buse', 'clean_gcode_marlin2', 'scale_gcode', 'modify_gcode_speed', 'generate_gcode_custom', 'const', 'change_base', 'visualize']

@@ -17,9 +17,10 @@ def menu_modif():
                             ["4", "Redimensioner un fichier Gcode"],
                             ["5", "Changer de taille de Buse"],
                             ["6", "Changer la base d'un vase"],
-                            ["7", "Retour"],
-                            ["8", "Quitter"],
-                            ([], ["9", "Export modified file"])[len(settings.gcode_file_selected.modifications) > 0]
+                            ["7", "Visualiser gcode"],
+                            ["8", "Retour"],
+                            ["9", "Quitter"],
+                            ([], ["e", "Export modified file"])[len(settings.gcode_file_selected.modifications) > 0]
                         ],
                         headers=['Option', 'Description'], 
                         tablefmt='plain')
@@ -63,10 +64,16 @@ def menu_modif():
             print(settings.gcode_file_selected.describeModifications())
             input("")
         elif choix == "7":
+            clear_console()
+            settings.gcode_file_selected = gcode_utils.visualize(continue_or_restart(settings.gcode_file_selected))
+            print("\n")
+            print(settings.gcode_file_selected.describeModifications())
+            input("")
+        elif choix == "8":
             menu_principal(settings.gcode_file_selected)
-        elif choix == "8" or choix == "q":
+        elif choix == "9" or choix == "q":
             quitter()
-        elif choix == "9":
+        elif choix == "e":
             settings.gcode_file_selected.export()
         else:
             print("Choix invalide. Veuillez réessayer.")

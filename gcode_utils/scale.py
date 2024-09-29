@@ -43,28 +43,28 @@ def scale_gcode(object):
                     f = float(valeur[1:])
             
             # Applique la réduction en fonction de la hauteur maximale ou du pourcentage
-            if pourcentage is not None:
-                if z is not None:
+            if pourcentage != None:
+                if z != None:
                     z = (z * reduction)
-                if x is not None:
+                if x != None:
                     x = (x * reduction)
-                if y is not None:
+                if y != None:
                     y = (y * reduction)
-                if e is not None:
+                if e != None:
                     e = (e * reduction)
                
                     
             # Met à jour la ligne Gcode avec les nouvelles valeurs
             nouvelle_ligne = 'G1'
-            if x is not None:
+            if x != None:
                 nouvelle_ligne += ' X{:.3f}'.format(x)
-            if y is not None:
+            if y != None:
                 nouvelle_ligne += ' Y{:.3f}'.format(y)
-            if z is not None:
+            if z != None:
                 nouvelle_ligne += ' Z{:.3f}'.format(z)
-            if e is not None:
+            if e != None:
                 nouvelle_ligne += ' E{:.5f}'.format(e)
-            if f is not None:
+            if f != None:
                 nouvelle_ligne += ' F{}'.format(f)
             # Remplace la ligne originale par la nouvelle ligne
             new_lines[i] = nouvelle_ligne + '\n'

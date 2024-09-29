@@ -1,4 +1,5 @@
 import re
+import os
 from datetime import datetime
 
 
@@ -13,6 +14,7 @@ class Gcode:
         return string
     
     def export(self):
+        os.makedirs("Generated_files/", exist_ok=True) 
         # current dateTime
         now = datetime.now()
         # convert to string
@@ -37,7 +39,7 @@ class Gcode:
         self.spirals = []
         self.max_height = 0.0
 
-        if filename is not "" :
+        if filename != "" :
             with open(filename, 'r') as f:
                 self.name = filename[11:]
                 self.gcode_lines = f.readlines()
@@ -117,13 +119,13 @@ class Gcode:
                 continue  # skip comments
             if line.startswith('G1'):
                 if 'Z' in line:  # new layer
-                    if current_layer is not None:
+                    if current_layer != None:
                         current_layer['end_index'] = i - 1
                         if (current_layer['end_index'] - current_layer['start_index'] - MCommands_nb - comments_nb) > 3 :
                             layers.append(current_layer)
                     z_value = float(line.split('Z')[1].split()[0])
                     current_layer = {'start_index': i, 'end_index': -1, 'height': z_value}
-                elif current_layer is not None and 'Z' not in line: # and 'E' in line:  # continuing layer
+                elif current_layer != None and 'Z' not in line: # and 'E' in line:  # continuing layer
                     comments_nb = 0
                     MCommands_nb = 0
                     current_layer['end_index'] = i
@@ -144,7 +146,7 @@ class Gcode:
             elif in_spiral and (line.startswith('G92') or line.startswith('G91') or line.startswith('G90')):
                 end_spiral = True
     
-        if in_spiral and start_index is not 0:
+        if in_spiral and start_index != 0:
             spirals.append({'start_index': start_index, 'end_index': len(self.gcode_lines) - 1, 'height': height})
 
         # remove incomplete layers or incorrect

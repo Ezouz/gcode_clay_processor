@@ -1,3 +1,7 @@
+# Use
+`pip install -r requirements.txt`
+
+
 # gcode_clay_processor
 
 
@@ -33,3 +37,29 @@ The program delimitate differents layers (which are blocks of lines) when it fin
 the height variable contain the value of the Z coordinate mentioned just before.
 the variable start_index is the line index of the first line of the layer that contain the instruction G1 and does not contains any Z coordinate.
 the variable end_index is the line index of the last line of the layer that contain the instruction G1 and does not contains any Z coordinate.
+
+
+
+
+
+///
+TODO
+dessin
+: analyse image 
+-> tracé ligne par ligne en zigzag
+-> foncé = +- extrusion
+
+dessin
+:
+-> conversion tracé vectoriel
+-> mix de tracés
+
+generation forme
+: 
+-> nuages de points (entrée, c4d ou generation)
+-> relief (tri par ordonnées et slice, deduction tracé forme - ordre des points, floodfill)
+-> remplissage grille de base
+
+IA 
+: 
+-> remplissage de forme en tracé gcode
