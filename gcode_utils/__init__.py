@@ -16,6 +16,7 @@ from .speed import *
 from .mix_gcode import *
 
 from .generate import *
+from .generate_rose import *
 
 from .visualize import *
 

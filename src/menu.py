@@ -87,7 +87,8 @@ def menu_principal():
         print(tabulate([
                             ["1", "Modifier un fichier Gcode"],
                             ["2", "Généré un fichier Gcode"],
-                            ["3", "Quitter"]
+                            ["3", "Généré rosette Gcode"],
+                            ["5", "Quitter"]
                         ],
                         headers=['Option', 'Description'], 
                         tablefmt='plain')
@@ -100,8 +101,10 @@ def menu_principal():
             settings.gcode_file_selected = Gcode(file_selected)
             menu_modif()
         elif choix == "2":
-            gcode_utils.generate_circle_gcode()
+            gcode_utils.generate_vase()
         elif choix == "3":
+            gcode_utils.generate_rose()
+        elif choix == "5":
             quitter()
         else:
             print("Choix invalide. Veuillez réessayer.")
