@@ -77,23 +77,23 @@ def menu_modif():
             settings.gcode_file_selected.export()
         else:
             print("Choix invalide. Veuillez réessayer.")
-    
+
 
 def menu_principal():
     # Boucle principale du menu
     while True:
-        clear_console()
+        # clear_console()
         print("\nMenu Principal:\n")
         print(tabulate([
                             ["1", "Modifier un fichier Gcode"],
-                            ["2", "Généré un fichier Gcode"],
-                            ["3", "Généré rosette Gcode"],
+                            ["2", "Générer un vase Gcode"],
+                            # ["3", "Généré un fichier Gcode"],
                             ["5", "Quitter"]
                         ],
                         headers=['Option', 'Description'], 
                         tablefmt='plain')
             )
-         
+
         choix = input("\nVeuillez entrer le numéro de votre choix : ")
         if choix == "1":
             clear_console()
@@ -101,9 +101,10 @@ def menu_principal():
             settings.gcode_file_selected = Gcode(file_selected)
             menu_modif()
         elif choix == "2":
-            gcode_utils.generate_vase()
-        elif choix == "3":
-            gcode_utils.generate_rose()
+            # gcode_utils.generate_rose()
+            settings.gcode_file_selected = Gcode(gcode_utils.generate_rose())
+        # elif choix == "3":
+        #     gcode_utils.generate_vase()
         elif choix == "5":
             quitter()
         else:

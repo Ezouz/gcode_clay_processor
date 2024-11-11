@@ -5,6 +5,24 @@ from datetime import datetime
 
 class Gcode:
 
+    def __init__(self, filename):
+        self.name = None
+        self.gcode_lines = []
+        self.modifications = []
+        self.modified_gcode_lines = []
+        self.first_part_comments_end = None
+        self.last_part_comments_start = None
+        self.layers = []
+        self.spirals = []
+        self.max_height = 0.0
+
+        if filename != "" and filename != None :
+            with open(filename, "r") as f:
+                self.name = filename[11:]
+                self.gcode_lines = f.readlines()
+
+        self.initValues()
+
     def describeModifications(self):
         string = ""
         if len(self.modifications) > 0:
@@ -12,7 +30,7 @@ class Gcode:
             for modif in self.modifications:
                 string += "; {}\n".format(modif.describe())
         return string
-    
+
     def export(self):
         os.makedirs("Generated_files/", exist_ok=True) 
         # current dateTime
@@ -27,24 +45,6 @@ class Gcode:
             new_file.writelines(self.modified_gcode_lines)
         print("Le fichier GCode a été modifié et enregistré sous le nom : ", new_file_name)
         input("")
-
-    def __init__(self, filename):
-        self.name = None
-        self.gcode_lines = []
-        self.modifications = []
-        self.modified_gcode_lines = []
-        self.first_part_comments_end = None
-        self.last_part_comments_start = None
-        self.layers = []
-        self.spirals = []
-        self.max_height = 0.0
-
-        if filename != "" :
-            with open(filename, 'r') as f:
-                self.name = filename[11:]
-                self.gcode_lines = f.readlines()
-
-        self.initValues()
 
     def show(self):
         print('---------------------------------')
@@ -72,7 +72,7 @@ class Gcode:
     def initValues(self):
         num_lines = len(self.gcode_lines)
         last_comment_index = -1
-        
+
         # Find the index of the last series of comments at the beginning of the file
         for i, line in enumerate(self.gcode_lines):
             if line.startswith(';') or line.startswith('\n') or line.startswith(' '):
@@ -80,7 +80,7 @@ class Gcode:
             else:
                 self.first_part_comments_end = last_comment_index
                 break
-        
+
         # Find the index of the last series of comments at the end of the file
         last_comment_index = -1
         for i in range(num_lines-1, -1, -1):
@@ -145,7 +145,7 @@ class Gcode:
                     pass
             elif in_spiral and (line.startswith('G92') or line.startswith('G91') or line.startswith('G90')):
                 end_spiral = True
-    
+
         if in_spiral and start_index != 0:
             spirals.append({'start_index': start_index, 'end_index': len(self.gcode_lines) - 1, 'height': height})
 
@@ -161,5 +161,5 @@ class Gcode:
 # for i, line in enumerate(self.gcode_lines):
 #     if line.startswith(';') or line.startswith('\n') or line.startswith(' '):
 #         pass
-#     else: 
+#     else:
 #         cleared_lines.append(line)

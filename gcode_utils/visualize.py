@@ -11,7 +11,7 @@ def visualize(object):
     print(object.describeModifications())
     object.show()
 
-   # Paramètres d'affichage
+    # Paramètres d'affichage
     SCREEN_WIDTH = 600
     SCREEN_HEIGHT = 600
     BG_COLOR = (255, 255, 255)
@@ -94,6 +94,7 @@ def visualize(object):
         for line in gcode_lines:
             if line.startswith('G1'):
                 x, y, z = parse_coordinates(line)
+                print(x, y, z)
                 if x is not None and y is not None and z is not None:
                     # Appliquer la rotation
                     x_rot = x * math.cos(rotation_angle) - y * math.sin(rotation_angle)
@@ -114,7 +115,6 @@ def visualize(object):
 
         # Mettre à jour l'affichage
         pygame.display.flip()
-        
+
 if __name__=="__main__":
-	main()
-        
+    visualize()

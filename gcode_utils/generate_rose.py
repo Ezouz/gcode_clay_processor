@@ -1,7 +1,6 @@
 import math
 import random
-
-"""TODO LINK TO FILE HANDLING"""
+from gcode_utils import Gcode
 
 
 def calculate_distance(x1, y1, z1, x2, y2, z2):
@@ -90,6 +89,9 @@ class GCodeGenerator:
         self._x, self._y, self._z, self._e = 0, 0, 0, 0
         self.extrude_active = False
         self.gradient = {}
+        self.gcode_vase = Gcode("")
+        self.gcode_vase.name = "Generated_vase"
+        self.gcode_vase.gcode_lines = []
 
     def calculate_max_angle(self):
         return (
@@ -101,7 +103,8 @@ class GCodeGenerator:
     def generate_rosette_gcode(self):
         params = self.rosette_params
         printer = self.printer_config
-        gcode = self._initialize_gcode()
+        self._initialize_gcode()
+        self._note_params()
 
         z_height = params.initial_z_height
         layer = 0
@@ -119,10 +122,9 @@ class GCodeGenerator:
                 else:
                     # Calcul du rayon r pour obtenir des lobes intérieurs et extérieurs
                     if params.ticul:
-                        r = params.radius * abs(math.cos(math.radians(k * angle))) 
+                        r = params.radius * abs(math.cos(math.radians(k * angle)))
                     else:
                         r = params.radius * math.cos(math.radians(k * angle))
-
 
                 # Calcul des coordonnées initiales sans distorsion
                 base_x = r * math.cos(math.radians(angle))
@@ -177,7 +179,7 @@ class GCodeGenerator:
                 else:
                     variance_z = z_height
 
-                gcode += self._send_gcode(
+                self._send_gcode(
                     x,
                     y,
                     variance_z if variance_z != 0 else z_height,
@@ -189,9 +191,11 @@ class GCodeGenerator:
             layer += 1
             z_height += params.layer_height
 
-        gcode += self._end_gcode()
-        self._write_gcode_file("rosette_pattern.gcode", gcode)
-        print("G-code pour le motif de rosace généré avec succès!")
+        self._end_gcode()
+
+        self.gcode_vase.initValues()
+        self.gcode_vase.show()
+        self.gcode_vase.export()
 
     def _generate_gradient(self, x, y):
         """Génère un vecteur aléatoire pour un point de la grille"""
@@ -276,9 +280,6 @@ class GCodeGenerator:
 
         return adjusted_noise
 
-    # def _blop(self, x, y):
-    #     return math.sin(x * 2 * math.pi) * math.cos(y * 2 * math.pi)
-
     def _blop(self, x, y, scale, octaves, persistence, lacunarity):
         """
         Génère un bruit de Perlin 2D avec octaves pour obtenir des ondulations naturelles.
@@ -330,58 +331,133 @@ class GCodeGenerator:
             gcode += f"E{self._e:.5f} "
 
         gcode += "\n"
+        self.gcode_vase.gcode_lines.append(gcode)
         self._x, self._y, self._z = x, y, z
         self.extrude_active = extrude
         return gcode
 
     def _initialize_gcode(self):
-        return (
-            "G28\n"
-            "G1 Z5 F5000 ; lift nozzle\n"
-            "M73 P0 ; printing progress 0%\n"
+        self.gcode_vase.gcode_lines.append("G28\n")
+        self.gcode_vase.gcode_lines.append("G1 Z5 F5000 ; lift nozzle\n")
+        self.gcode_vase.gcode_lines.append("M73 P0 ; printing progress 0%\n")
+        self.gcode_vase.gcode_lines.append(
             f"G1 Z{self.rosette_params.initial_z_height:.2f} F7800\n"
-            "G1 E-2 F2400\n"
-            "M103 ; extruder off\n"
-            "G1 F7800\n"
-            ";END OF HOMING\n"
-            ";\n"
-            ";START OF GCODE\n"
         )
+        self.gcode_vase.gcode_lines.append("G1 E-2 F2400\n")
+        self.gcode_vase.gcode_lines.append("M103 ; extruder off\n")
+        self.gcode_vase.gcode_lines.append("G1 F7800\n")
+        self.gcode_vase.gcode_lines.append(";END OF HOMING\n")
+        self.gcode_vase.gcode_lines.append(";\n")
+        self.gcode_vase.gcode_lines.append(";START OF GCODE\n")
 
     def _end_gcode(self):
-        return (
+        self.gcode_vase.gcode_lines.append(
             "G91 ; use relative positioning for the XYZ axes\n"
+        )
+        self.gcode_vase.gcode_lines.append(
             "G1 Z10 F4000 ; move 10mm to the right of the current location\n"
-            "G90 ; absolute positioning\n"
-            "M106 S0 ; turn off cooling fan\n"
-            "M104 S0 ; turn off extruder\n"
-            "M140 S0 ; turn off bed\n"
+        )
+        self.gcode_vase.gcode_lines.append("G90 ; absolute positioning\n")
+        self.gcode_vase.gcode_lines.append("M106 S0 ; turn off cooling fan\n")
+        self.gcode_vase.gcode_lines.append("M104 S0 ; turn off extruder\n")
+        self.gcode_vase.gcode_lines.append("M140 S0 ; turn off bed\n")
+        self.gcode_vase.gcode_lines.append(
             "G92 E0 ; set current filament position to E=0\n"
-            "G1 E-8 F800 ; retract filament\n"
-            "M84 ; disable motors\n"
+        )
+        self.gcode_vase.gcode_lines.append("G1 E-8 F800 ; retract filament\n")
+        self.gcode_vase.gcode_lines.append("M84 ; disable motors\n")
+
+    def _note_params(self):
+        self.gcode_vase.gcode_lines.append("; PARAMETERS OF THE GENERATION\n")
+        self.gcode_vase.gcode_lines.append(
+            f"; radius = {self.rosette_params.radius:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; vase_height = {self.rosette_params.vase_height:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; layer_height = {self.rosette_params.layer_height:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; initial_z_height = {self.rosette_params.initial_z_height:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; precision = {self.rosette_params.precision:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(f"; n = {self.rosette_params.n:.2f}\n")
+        self.gcode_vase.gcode_lines.append(f"; d = {self.rosette_params.d:.2f}\n")
+        self.gcode_vase.gcode_lines.append(
+            f"; ticul = {self.rosette_params.ticul:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; stretch_factor_x = {self.rosette_params.stretch_factor_x:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; stretch_factor_y = {self.rosette_params.stretch_factor_y:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; z_variance_enabled = {self.rosette_params.z_variance_enabled:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; z_variance_max = {self.rosette_params.z_variance_max:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; z_variance_start_layer = {self.rosette_params.z_variance_start_layer:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; z_variance_transition_layers = {self.rosette_params.z_variance_transition_layers:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; inner_layer_end_height = {self.rosette_params.inner_layer_end_height:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; x_wave_amplitude = {self.rosette_params.x_wave_amplitude:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; x_wave_frequency = {self.rosette_params.x_wave_frequency:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; y_wave_amplitude = {self.rosette_params.y_wave_amplitude:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; y_wave_frequency = {self.rosette_params.y_wave_frequency:.2f}\n"
         )
 
-    def _write_gcode_file(self, filename, gcode):
-        with open(filename, "w") as f:
-            f.write(gcode)
+        self.gcode_vase.gcode_lines.append(
+            f"; natural = {self.rosette_params.natural:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; noise_amplitude = {self.rosette_params.noise_amplitude:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; noise_scale = {self.rosette_params.noise_scale:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; octaves = {self.rosette_params.octaves:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; persistence = {self.rosette_params.persistence:.2f}\n"
+        )
+        self.gcode_vase.gcode_lines.append(
+            f"; lacunarity = {self.rosette_params.lacunarity:.2f}\n"
+        )
 
 
 def generate_rose():
     printer_config = PrinterConfig()
-
     rosette_params = RosetteParameters(
         # Base rules
-        radius=5,  # Overall size of the petal pattern
-        vase_height=30,  # hauteur finale (z * layer_height)
+        radius=9,  # Overall size of the petal pattern
+        vase_height=25,  # hauteur finale (z * layer_height)
         layer_height=0.4,  # Hauteur de couche
-        initial_z_height=1,  # Hauteur de couche initiale
+        initial_z_height=0.8,  # Hauteur de couche initiale
         precision=0.5,  # Angular resolution in degrees
         # Rosace params
-        n=1,  # Numerator for k = n/d
-        d=2,  # Denominator for k = n/d
-        ticul=True,  # ptit cul sur les 1/2, 1/3
+        n=3,  # Numerator for k = n/d
+        d=3,  # Denominator for k = n/d
+        ticul=False,  # ptit cul sur les 1/2, 1/3
         # Transformation pour ajouter des ondulations
-        stretch_factor_x=0,  # Étirement sur l'axe X (horizontal)
+        stretch_factor_x=3,  # Étirement sur l'axe X (horizontal)
         stretch_factor_y=0,  # Compression sur l'axe Y (vertical)
         # Variance en z
         z_variance_enabled=False,
@@ -391,17 +467,17 @@ def generate_rose():
         # double le fond sur une certaine hauteur
         inner_layer_end_height=7,
         # wave
-        x_wave_amplitude=0,
-        x_wave_frequency=0,
-        y_wave_amplitude=0,
-        y_wave_frequency=0,
+        x_wave_amplitude=1.7,
+        x_wave_frequency=0.5,
+        y_wave_amplitude=1.2,
+        y_wave_frequency=0.6,
         # noise
         natural=True,
-        noise_amplitude=0.4,
-        noise_scale=0.29,  # froufrous
-        octaves=4,
-        persistence=0.5,
-        lacunarity=1.5,
+        noise_amplitude=2.5,
+        noise_scale=.13,  # froufrous
+        octaves=1,
+        persistence=2.5,
+        lacunarity=5,
         # TODO possibilité de faire ,ca un layer de tant de couches sur 2
         # TODO rotations
         # TODO faire reuire le diamettre de la forme sur la hauteur
